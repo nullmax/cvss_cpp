@@ -1,5 +1,4 @@
 #include <iostream>
-#include <list>
 #include "cvss/cvss.h"
 
 using namespace std;

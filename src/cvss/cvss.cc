@@ -3,7 +3,6 @@
 
 using namespace ns3;
 
-
 double CVSS::exp_coef = 8.22;
 double CVSS::scope_coef = 1.08;
 double CVSS::weight[11][5] = {{0.85, 0.62, 0.55, 0.2},
@@ -26,6 +25,7 @@ CVSS::CVSS(CVSSMetricAV av, CVSSMetricAC ac, CVSSMetricPRCIA pr, CVSSMetricUI ui
         CVSSMetricE e, CVSSMetricRL rl, CVSSMetricRC rc, CVSSMetricCIAR cr, CVSSMetricCIAR ir, CVSSMetricCIAR ar,
         CVSSMetricAV mav, CVSSMetricAC mac, CVSSMetricPRCIA mpr, CVSSMetricUI mui, CVSSMetricS ms, CVSSMetricPRCIA mc, CVSSMetricPRCIA mi, CVSSMetricPRCIA ma)
 {
+    re_calc = true;
     metrics[AV] = static_cast<int>(av);
     metrics[AC] = static_cast<int>(ac);
     metrics[PR] = static_cast<int>(pr);
@@ -114,6 +114,14 @@ inline double CVSS::min(double a, double b)
 
 void CVSS::CalcScore(double scores[3])
 {   
+    if (!re_calc)
+    {
+        scores[0]  = m_scores[0];
+        scores[1]  = m_scores[1];
+        scores[2]  = m_scores[2];
+        return;
+    }
+
     const double eps = 1e-5;
     CVSSMetricS scope_cast = static_cast<CVSSMetricS>(metrics[S]);
 
@@ -133,22 +141,22 @@ void CVSS::CalcScore(double scores[3])
 
     if (impact < 0 || impact < eps )
     {
-        scores[0] = 0;
+        m_scores[0] = 0;
     }
     else
     {
         if (scope_cast == CVSSMetricS::Unchanged)
         {
-            scores[0] = round_up1(min(exp + impact, 10));
+            m_scores[0] = round_up1(min(exp + impact, 10));
         }
         else
         {
-            scores[0] = round_up1(min(scope_coef * (exp + impact), 10));
+            m_scores[0] = round_up1(min(scope_coef * (exp + impact), 10));
         }
     }
     
     // temportal score
-    scores[1] = round_up1(scores[0] * GetWeight(E) * GetWeight(RL) * GetWeight(RC));
+    m_scores[1] = round_up1(m_scores[0] * GetWeight(E) * GetWeight(RL) * GetWeight(RC));
 
     // evnironmental score
     double miss = min(1 - (
@@ -171,20 +179,24 @@ void CVSS::CalcScore(double scores[3])
 
     if (m_impact < 0 || m_impact < eps)
     {
-        scores[2] = 0;
+        m_scores[2] = 0;
     }
     else if (m_scope_cast == CVSSMetricS::Unchanged)
     {
-        scores[2] = round_up1(
+        m_scores[2] = round_up1(
             round_up1(min(m_impact + m_exp, 10)) * 
             GetWeight(E) * GetWeight(RL) * GetWeight(RC)
         );
     }
     else
     {
-        scores[2] = round_up1(
+        m_scores[2] = round_up1(
             round_up1(min(scope_coef * (m_impact + m_exp), 10)) * 
             GetWeight(E) * GetWeight(RL) * GetWeight(RC)
         );
     }
+    scores[0] = m_scores[0];
+    scores[1] = m_scores[1];
+    scores[2] = m_scores[2];
+    re_calc = false;
 }

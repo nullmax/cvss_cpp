@@ -4,7 +4,6 @@
 namespace ns3
 {   
     const int CVSSMetricsNumber = 22;
-
     enum CVSSMetric
     {
         AV, AC, PR, UI, S, C, I, A,
@@ -28,7 +27,12 @@ namespace ns3
     class CVSS
     {
     private:
+        bool re_calc; // 是否重新计算
+        double m_scores[3] = {0.0, 0.0, 0.0};
         int metrics[CVSSMetricsNumber];
+        int M2I(CVSSMetric m);
+        double GetWeight(CVSSMetric m);
+
         static double exp_coef;
         static double scope_coef;
         static double weight[11][5];
@@ -41,8 +45,6 @@ namespace ns3
         CVSSMetricAV mav, CVSSMetricAC mac, CVSSMetricPRCIA mpr, CVSSMetricUI mui, CVSSMetricS ms, CVSSMetricPRCIA mc, CVSSMetricPRCIA mi, CVSSMetricPRCIA ma);
         ~CVSS();
         void CalcScore(double scores[3]);
-        int M2I(CVSSMetric m);
-        double GetWeight(CVSSMetric m);
     };
 }
 #endif
